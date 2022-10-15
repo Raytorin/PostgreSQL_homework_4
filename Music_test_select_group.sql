@@ -17,17 +17,19 @@ ORDER BY tracks_middle DESC;
 
 SELECT artist_name, album_year FROM artist a  
 JOIN artist_album aa  ON a.artist_id = aa.artist_id 
-JOIN album a2 ON aa.album_id = a2.album_id 
-WHERE (SELECT EXTRACT(YEAR FROM album_year)) != '2020'
-GROUP BY a.artist_name, a2.album_year;
+JOIN album a2 ON aa.album_id = a2.album_id
+WHERE artist_name != (
+	SELECT artist_name FROM artist a  
+	JOIN artist_album aa  ON a.artist_id = aa.artist_id 
+	JOIN album a2 ON aa.album_id = a2.album_id
+	WHERE (SELECT EXTRACT(YEAR FROM album_year)) = '2020');
 
-SELECT compilation_name FROM compilation c
+SELECT DISTINCT compilation_name FROM compilation c
 JOIN tracks_compilation tc ON c.compilation_id = tc.compilation_id
 JOIN tracks t ON tc.tracks_id = t.track_id
 JOIN artist_album aa ON t.album_id = aa.album_id 
 JOIN artist a ON aa.artist_id = a.artist_id
-WHERE a.artist_name = 'The Weeknd'
-GROUP BY c.compilation_name;
+WHERE a.artist_name = 'The Weeknd';
 
 SELECT album_name, COUNT(ga.artist_id) FROM album a
 JOIN artist_album aa ON a.album_id = aa.album_id
@@ -39,30 +41,23 @@ ORDER BY COUNT(ga.artist_id) DESC;
 
 SELECT track_name FROM tracks t
 LEFT JOIN tracks_compilation tc ON t.track_id = tc.tracks_id
-WHERE tc.compilation_id IS NULL
-GROUP BY t.track_name;
+WHERE tc.compilation_id IS NULL;
 
 SELECT artist_name FROM artist a
 LEFT JOIN artist_album aa ON a.artist_id = aa.artist_id 
 LEFT JOIN tracks t ON aa.album_id = t.album_id
-WHERE t.track_duraction = (SELECT MIN(track_duraction) FROM tracks)
-GROUP BY artist_name;
+WHERE t.track_duraction = (SELECT MIN(track_duraction) FROM tracks);
 
-SELECT album_name, COUNT(t.album_id) FROM album a
-LEFT JOIN tracks t ON a.album_id = t.album_id
+SELECT album_name album, COUNT(track_name) track_count FROM album a 
+LEFT JOIN tracks t  ON a.album_id = t.album_id
 GROUP BY album_name
-HAVING COUNT(t.album_id) = 
+HAVING COUNT(track_name) = 
 	(
-	SELECT MIN(track_count) FROM 
-		(
-		SELECT COUNT(t2.album_id) track_count FROM album a2 
-		LEFT JOIN tracks t2 ON a2.album_id = t2.album_id 
+		SELECT COUNT(track_name) FROM album a2
+		LEFT JOIN tracks t2  ON a2.album_id = t2.album_id 
 		GROUP BY album_name
-		) 
-	track_min_count
+		ORDER BY COUNT(track_name)
+		LIMIT 1
 	);
-
-
-
 
 
